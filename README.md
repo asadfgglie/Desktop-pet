@@ -1,1 +1,1 @@
-Change by http://kilkakon.com/shimeji/index.php
+Image Source from http://kilkakon.com/shimeji/index.php
