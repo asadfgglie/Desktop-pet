@@ -1,22 +1,27 @@
 package ckcsc.asadfgglie.pet.action;
 
+import ckcsc.asadfgglie.Exception.WrongDirectionException;
 import ckcsc.asadfgglie.pet.Pet;
 import ckcsc.asadfgglie.pet.behavior.BehaviorContainer;
 
 public abstract class PetAction {
-    protected Pet pet;
-
-    protected PetAction(Pet pet){
+    Pet pet;
+    PetAction(Pet pet){
         this.pet = pet;
     }
 
-    public BehaviorContainer.BehaviorList getBehavior(){
+    public BehaviorContainer.BehaviorList getBehavior (){
         return BehaviorContainer.BEHAVIOR_LIST_VALUES.get(getClass().getSimpleName().toUpperCase());
     }
 
-    public int getActionImageTick () {
-        return getBehavior().getActionTick();
+    /** Return <b>EACH IMAGE</b> tick **/
+    public abstract int getActionTick();
+
+    public int getSpeedX() throws WrongDirectionException {
+        return 0;
     }
 
-    public abstract long getActionTick ();
+    public int getSpeedY(){
+        return 0;
+    }
 }
