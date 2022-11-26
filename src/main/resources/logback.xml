@@ -1,12 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <contextName>Desktop pet</contextName>
+
+    <property name="log.path" value="E:/program/Java/Desktop_pet/log"/>
+    <property name="log.file" value="${log.path}/%d{yyyy_MM_dd}_%i.log"/>
+
+    <!-- 控制檯輸出 -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} %boldCyan(%-15.-15thread) %boldGreen(%-15.-15logger{0}) %highlight(%-4level) %msg%n</pattern>
         </encoder>
+
+    </appender>
+
+    <appender name="fileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} %-15.-15thread %-15.-15logger{0} %-4level %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--日誌檔案輸出的檔名-->
+            <FileNamePattern>${log.file}</FileNamePattern>
+            <!--日誌檔案保留天數-->
+            <MaxHistory>30</MaxHistory>
+            <maxFileSize>50MB</maxFileSize>
+        </rollingPolicy>
+        <ImmediateFlush>true</ImmediateFlush>
+    </appender>
+
+    <appender name="asyncFileAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>5000</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="fileAppender"/>
     </appender>
 
     <root level="debug">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="asyncFileAppender"/>
+        <appender-ref ref="console"/>
     </root>
+
 </configuration>
