@@ -34,7 +34,7 @@
         <appender-ref ref="fileAppender"/>
     </appender>
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="asyncFileAppender"/>
         <appender-ref ref="console"/>
     </root>
