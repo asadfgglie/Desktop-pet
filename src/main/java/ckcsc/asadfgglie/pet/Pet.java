@@ -182,14 +182,14 @@ public class Pet extends Thread{
         logger.debug("speedX: " + speedX);
         logger.debug("x, y: " + window.getX() + ", " + window.getY());
         // X direction
-        if((window.getX() >= 0 && window.getX() <= Main.SCREEN_SIZE_X - Main.MAX_SIZE) && ((int) (window.getX() + speedX) <= Main.SCREEN_SIZE_X - Main.MAX_SIZE && (int) (window.getX() + speedX) >= 0)){
+        if((window.getX() >= 0 && window.getX() <= Main.SCREEN_SIZE_X - panel.getWidth()) && ((int) (window.getX() + speedX) <= Main.SCREEN_SIZE_X - panel.getWidth() && (int) (window.getX() + speedX) >= 0)){
             window.setLocation((int) (window.getX() + speedX), window.getY());
         }
         else if(window.getX() < 0){
             window.setLocation(0, window.getY());
         }
-        else if(window.getX() > Main.SCREEN_SIZE_X - Main.MAX_SIZE){
-            window.setLocation(Main.SCREEN_SIZE_X - Main.MAX_SIZE, window.getY());
+        else if(window.getX() > Main.SCREEN_SIZE_X - panel.getWidth()){
+            window.setLocation(Main.SCREEN_SIZE_X - panel.getWidth(), window.getY());
         }
 
         // Y direction
