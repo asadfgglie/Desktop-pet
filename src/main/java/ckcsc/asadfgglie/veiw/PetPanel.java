@@ -1,5 +1,6 @@
 package ckcsc.asadfgglie.veiw;
 
+import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.Pet;
 import ckcsc.asadfgglie.pet.action.Side;
 
@@ -23,12 +24,9 @@ public class PetPanel extends JPanel {
         super.paintComponent(g);
         Image image = pet.getWindow().getTickImage();
 
-        Graphics2D g2 = (Graphics2D) g.create();
-        Dimension d = getSize();
-
         AffineTransform transform = new AffineTransform();
 
-        double sc = Math.min(d.width / (double)image.getWidth(this), d.height / (double)image.getHeight(this));
+        double sc = Math.min(Main.MAX_SIZE / (double)image.getWidth(this), Main.MAX_SIZE / (double)image.getHeight(this));
 
         transform.scale(sc, sc);
 
@@ -40,7 +38,19 @@ public class PetPanel extends JPanel {
             image = op.filter(toBufferedImage(image), null);
         }
 
+        setSize((int) (image.getWidth(this) * sc), (int) (image.getHeight(this) * sc));
+
+        Graphics2D g2 = (Graphics2D) g.create();
         g2.drawImage(image, transform, this);
+
+        //hit box
+        if(Main.DEBUG) {
+            Rectangle rectangle = new Rectangle((int) (image.getWidth(this) * sc), (int) (image.getHeight(this) * sc));
+            g2.setStroke(new BasicStroke(10));
+            g2.setPaint(Color.WHITE);
+            g2.draw(rectangle);
+        }
+
         g2.dispose();
     }
 

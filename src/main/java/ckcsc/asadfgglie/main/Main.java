@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class Main {
     public static final int FPS = 60;
@@ -16,11 +17,20 @@ public class Main {
 
     public static final double GRAVITY = 30.0 / FPS;
 
+    /** hit box */
+    public static boolean DEBUG = false;
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main (String[] args) throws Exception {
         ArrayList<Pet> pets = Pet.loadPets(args[0], logger);
+
+        try {
+            if (args[1].toLowerCase(Locale.ROOT).equals("debug")) {
+                DEBUG = true;
+            }
+        }
+        catch (Exception ignore) {}
 
         logger.info("Screen size: " + SCREEN_SIZE_X + ", " + SCREEN_SIZE_Y);
         logger.info("Resources have loaded.");
