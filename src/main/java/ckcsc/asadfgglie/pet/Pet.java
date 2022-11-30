@@ -2,11 +2,8 @@ package ckcsc.asadfgglie.pet;
 
 import ckcsc.asadfgglie.Exception.WrongDirectionException;
 import ckcsc.asadfgglie.main.Main;
-import ckcsc.asadfgglie.pet.action.PetAction;
-import ckcsc.asadfgglie.pet.action.Side;
-import ckcsc.asadfgglie.pet.action.Stand;
-import ckcsc.asadfgglie.pet.action.Walk;
-import ckcsc.asadfgglie.pet.behavior.BehaviorContainer;
+import ckcsc.asadfgglie.pet.action.*;
+import ckcsc.asadfgglie.pet.action.SpeedVector;
 import ckcsc.asadfgglie.veiw.PetPanel;
 import ckcsc.asadfgglie.veiw.PetWindow;
 import org.slf4j.Logger;
@@ -23,7 +20,7 @@ import java.util.Random;
 public class Pet extends Thread{
     private final Logger logger;
 
-    public Side honSide = Side.Left;
+    public SpeedVector honSpeedVector = SpeedVector.Left;
 
     private int offsetX;
     private int offsetY;
@@ -34,18 +31,21 @@ public class Pet extends Thread{
 
     public final String name;
 
-    private final BehaviorContainer behaviorContainer;
+    private final ActionContainer actionContainer;
 
     private final PetPanel panel;
     private final PetWindow window;
+    private final Thread petWindowThread;
 
-    public Pet (String name, BehaviorContainer behaviorContainer){
+    public Pet (String name, ActionContainer actionContainer){
         this.name = name;
-        this.behaviorContainer = behaviorContainer;
+        this.actionContainer = actionContainer;
         logger = LoggerFactory.getLogger(this.getClass() + "-" + name);
 
         panel = new PetPanel(this);
         window = new PetWindow(this);
+
+        petWindowThread = new Thread(window, name + "-window");
 
         window.addMouseListener(new MouseAdapter() {
             @Override
@@ -121,7 +121,7 @@ public class Pet extends Thread{
             throw new FileNotFoundException("There must be Directory of where there is behavior image in your pet's folder!");
         }
 
-        BehaviorContainer behaviors = new BehaviorContainer();
+        ActionContainer behaviors = new ActionContainer();
 
         for (File behaviorFolder : behaviorFolders) {
             logger.info("load .../" + path.getName() + "/" + behaviorFolder.getName());
@@ -139,41 +139,53 @@ public class Pet extends Thread{
                 imgs[j] = Toolkit.getDefaultToolkit().getImage(behaviorImages[j].getPath());
             }
 
-            behaviors.addBehavior(behaviorFolder.getName().toUpperCase(), imgs);
+            behaviors.addAction(behaviorFolder.getName().toUpperCase(), imgs);
         }
         return new Pet(path.getName(), behaviors);
     }
 
-    public void setNowBehavior (PetAction action) throws WrongDirectionException {
+    /** Set behavior and pet's each speedVector speed vector */
+    private void setNowBehavior (PetAction action) throws WrongDirectionException {
         window.setAction(action);
         speedX = action.getSpeedX();
         speedY = action.getSpeedY();
     }
 
+
+    /** <p>Set behavior, and make action switch thread wait for action down.</p>
+     * <p>actionTime: millisecond, how much time action switch thread should wait for.</p>
+     * */
+    public synchronized void startAction(PetAction action, int actionTime) throws WrongDirectionException {
+        this.notify();
+
+        setNowBehavior(action);
+
+        try {
+            wait(actionTime);
+            setNowBehavior(new Stand(this));
+        }
+        catch (InterruptedException ignore) {}
+    }
+
     @Override
     public void run () {
-        new Thread(window, name + "-window").start();
-        new Thread(() -> {
-            logger.debug(name + "-ActionSwitch thread start");
-            while (true) {
-                try {
-                    setNowBehavior(new Stand(this));
-                    Thread.sleep(2000);
-                }
-                catch (InterruptedException | WrongDirectionException e) {
-                    logger.error(e.getMessage());
-                    e.printStackTrace();
-                }
-
-                try {
-                    setNowBehavior(new Walk(this, (new Random().nextBoolean())? Side.Left.setSpeedX(-10) : Side.Right.setSpeedX(10)));
-                    Thread.sleep(2000);
-                }
-                catch (InterruptedException | WrongDirectionException e) {
-                    e.printStackTrace();
-                }
+        while (true) {
+            try {
+                startAction(new Stand(this), 2000);
             }
-        }, name + "-ActionSwitch").start();
+            catch (WrongDirectionException e) {
+                logger.error(e.getMessage());
+                e.printStackTrace();
+            }
+
+            try {
+                startAction(new Walk(this, (new Random().nextBoolean())? SpeedVector.Left.setSpeedX(-10) : SpeedVector.Right.setSpeedX(10)), 2000);
+            }
+            catch (WrongDirectionException e) {
+                logger.error(e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
     public void doMoveAction () {
@@ -216,11 +228,17 @@ public class Pet extends Thread{
         this.speedX = speedX;
     }
 
-    public void setOffsetY (int offsetY) {
-        this.offsetY = offsetY;
+    public void setSpeedY (double speedY) {
+        this.speedY = speedY;
     }
 
-    public BehaviorContainer getBehaviorContainer () {
-        return behaviorContainer;
+    public ActionContainer getBehaviorContainer () {
+        return actionContainer;
+    }
+
+    /** Start all pet's thread. */
+    public void generate () {
+        start();
+        petWindowThread.start();
     }
 }
