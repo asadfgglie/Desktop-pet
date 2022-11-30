@@ -2,7 +2,6 @@ package ckcsc.asadfgglie.pet.action;
 
 import ckcsc.asadfgglie.Exception.WrongDirectionException;
 import ckcsc.asadfgglie.pet.Pet;
-import ckcsc.asadfgglie.pet.behavior.BehaviorContainer;
 
 public abstract class PetAction {
     Pet pet;
@@ -10,8 +9,8 @@ public abstract class PetAction {
         this.pet = pet;
     }
 
-    public BehaviorContainer.BehaviorList getBehavior (){
-        return BehaviorContainer.BEHAVIOR_LIST_VALUES.get(getClass().getSimpleName().toUpperCase());
+    public ActionContainer.ActionList getBehavior (){
+        return ActionContainer.ACTION_LIST_VALUES.get(getClass().getSimpleName().toUpperCase());
     }
 
     /** Return <b>EACH IMAGE</b> tick **/

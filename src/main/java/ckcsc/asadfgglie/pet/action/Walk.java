@@ -6,14 +6,14 @@ import ckcsc.asadfgglie.pet.Pet;
 
 public class Walk extends PetAction{
     public int actionTick = Main.FPS / 4;
-    public Side side;
+    public SpeedVector speedVector;
 
-    public Walk (Pet pet, Side side) {
+    public Walk (Pet pet, SpeedVector speedVector) {
         super(pet);
-        if(side == Side.Left || side == Side.Right){
-            pet.honSide = side;
+        if(speedVector == SpeedVector.Left || speedVector == SpeedVector.Right){
+            pet.honSpeedVector = speedVector;
         }
-        this.side = side;
+        this.speedVector = speedVector;
     }
 
     @Override
@@ -23,6 +23,6 @@ public class Walk extends PetAction{
 
     @Override
     public int getSpeedX () throws WrongDirectionException {
-        return (int) (pet.getSpeedX() + side.getSpeedX());
+        return (int) (pet.getSpeedX() + speedVector.getSpeedX());
     }
 }
