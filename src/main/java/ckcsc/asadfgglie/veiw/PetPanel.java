@@ -2,7 +2,7 @@ package ckcsc.asadfgglie.veiw;
 
 import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.Pet;
-import ckcsc.asadfgglie.pet.action.Side;
+import ckcsc.asadfgglie.pet.action.SpeedVector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,22 +23,28 @@ public class PetPanel extends JPanel {
     protected void paintComponent (Graphics g) {
         super.paintComponent(g);
         Image image = pet.getWindow().getTickImage();
+        int imageWidth = image.getWidth(this);
+        int imageHeight = image.getHeight(this);
+
+        // when getWidth and getHeight malfunction, don't forget give it a default value
+        imageWidth = (imageWidth > 0)? imageWidth : Main.MAX_SIZE;
+        imageHeight = (imageHeight > 0)? imageHeight : Main.MAX_SIZE;
 
         AffineTransform transform = new AffineTransform();
 
-        double sc = Math.min(Main.MAX_SIZE / (double)image.getWidth(this), Main.MAX_SIZE / (double)image.getHeight(this));
+        double sc = Math.min(Main.MAX_SIZE / (double)imageWidth, Main.MAX_SIZE / (double)imageHeight);
 
         transform.scale(sc, sc);
 
-        if(pet.honSide == Side.Right){
+        if(pet.honSpeedVector == SpeedVector.Right){
             // flip image horizontally
             AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
-            tx.translate(-image.getWidth(this), 0);
+            tx.translate(-imageWidth, 0);
             AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            image = op.filter(toBufferedImage(image), null);
+            image = op.filter(toBufferedImage(image, imageWidth, imageHeight), null);
         }
 
-        setSize((int) (image.getWidth(this) * sc), (int) (image.getHeight(this) * sc));
+        setSize((int) (imageWidth * sc), (int) (imageHeight * sc));
 
         Graphics2D g2 = (Graphics2D) g.create();
         g2.drawImage(image, transform, this);
@@ -54,14 +60,14 @@ public class PetPanel extends JPanel {
         g2.dispose();
     }
 
-    private BufferedImage toBufferedImage (Image img) {
+    private BufferedImage toBufferedImage (Image img, int width, int height) {
         if (img instanceof BufferedImage)
         {
             return (BufferedImage) img;
         }
 
         // Create a buffered image with transparency
-        BufferedImage bufferedImage = new BufferedImage(img.getWidth(this), img.getHeight(this), BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         // Draw the image on to the buffered image
         Graphics2D bGr = bufferedImage.createGraphics();
