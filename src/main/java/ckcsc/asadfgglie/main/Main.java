@@ -8,6 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 public class Main {
     public static final int FPS = 60;
@@ -21,6 +23,21 @@ public class Main {
     public static boolean DEBUG = false;
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
+    private static final Thread commandThread = new Thread(Main.class.getSimpleName() + "-command"){
+        @Override
+        public void run () {
+            while (true){
+                try {
+                    String command = new Scanner(System.in).nextLine();
+                    if (command.startsWith("/") && command.split("/")[1].equalsIgnoreCase("stop")) {
+                        System.exit(0);
+                    }
+                }
+                catch (ArrayIndexOutOfBoundsException | NoSuchElementException ignore){}
+            }
+        }
+    };
 
     public static void main (String[] args) throws Exception {
         ArrayList<Pet> pets = Pet.loadPets(args[0], logger);
@@ -36,9 +53,13 @@ public class Main {
         logger.info("Resources have loaded.");
 
         for(Pet pet : pets){
-            pet.start();
+            pet.generate();
             logger.info("Generate " + pet.name);
             Thread.sleep(1000);
         }
+
+        commandThread.start();
     }
+
+
 }
