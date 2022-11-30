@@ -3,7 +3,7 @@ package ckcsc.asadfgglie.veiw;
 import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.Pet;
 import ckcsc.asadfgglie.pet.action.PetAction;
-import ckcsc.asadfgglie.pet.behavior.BehaviorContainer;
+import ckcsc.asadfgglie.pet.action.ActionContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public class PetWindow extends JWindow implements Runnable{
         setSize(Main.MAX_SIZE, Main.MAX_SIZE);
     }
 
-    public Image getTickImage(BehaviorContainer.BehaviorList behavior){
+    public Image getTickImage(ActionContainer.ActionList behavior){
         return pet.getBehaviorContainer().getImage(behavior, actionTick);
     }
 
