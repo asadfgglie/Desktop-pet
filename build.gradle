@@ -27,16 +27,17 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.jetbrains:annotations:23.0.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
     // https://mvnrepository.com/artifact/org.assertj/assertj-core
     testImplementation 'org.assertj:assertj-core:3.23.1'
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    implementation 'ch.qos.logback:logback-classic:1.4.1'
+    implementation 'ch.qos.logback:logback-classic:1.4.5'
 
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    implementation 'org.slf4j:slf4j-api:2.0.3'
+    implementation 'org.slf4j:slf4j-api:2.0.5'
 }
 
 test {
@@ -48,7 +49,7 @@ jar {
     metadataCharset 'utf-8'
 
     manifest.attributes(
-            "Main-Class": "ckcsc/asadfgglie/setup/SetUp",
+            "Main-Class": "ckcsc/asadfgglie/main/Main",
             "Implementation-Version": project.version
     )
 }
