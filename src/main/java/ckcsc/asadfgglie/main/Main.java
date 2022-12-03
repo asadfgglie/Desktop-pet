@@ -1,6 +1,10 @@
 package ckcsc.asadfgglie.main;
 
 import ckcsc.asadfgglie.pet.Pet;
+import ckcsc.asadfgglie.pet.action.Jump;
+import ckcsc.asadfgglie.util.SpeedVector;
+import ckcsc.asadfgglie.pet.action.Stand;
+import ckcsc.asadfgglie.pet.action.Walk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,21 +21,40 @@ public class Main {
     public static final int SCREEN_SIZE_X = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth();
     public static final int SCREEN_SIZE_Y = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight() - Toolkit.getDefaultToolkit().getScreenInsets(new JFrame().getGraphicsConfiguration()).bottom;
 
-    public static final double GRAVITY = 30.0 / FPS;
+    public static final SpeedVector GRAVITY = new SpeedVector(0, 30.0 / FPS);
+
+    public static ArrayList<Pet> PETS;
+
+    public static boolean INIT_DONE = false;
 
     /** hit box */
     public static boolean DEBUG = false;
 
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Main.class);
 
-    private static final Thread commandThread = new Thread(Main.class.getSimpleName() + "-command"){
+    private static final Thread _commandThread = new Thread(Main.class.getSimpleName() + "-command"){
         @Override
         public void run () {
             while (true){
                 try {
                     String command = new Scanner(System.in).nextLine();
-                    if (command.startsWith("/") && command.split("/")[1].equalsIgnoreCase("stop")) {
+                    if (command.equalsIgnoreCase("stop")) {
                         System.exit(0);
+                    }
+                    if(command.equalsIgnoreCase("walk")){
+                        PETS.get(0).startAction(new Walk(PETS.get(0), new SpeedVector(5, 0), 2000));
+                    }
+                    if(command.equalsIgnoreCase("stand")){
+                        PETS.get(0).startAction(new Stand(PETS.get(0), 1000));
+                    }
+                    if(command.equalsIgnoreCase("leftTest")){
+                        PETS.get(0).getWindow().setLocation(-10, SCREEN_SIZE_Y);
+                    }
+                    if (command.equalsIgnoreCase("rightTest")) {
+                        PETS.get(0).getWindow().setLocation(SCREEN_SIZE_X + 10, SCREEN_SIZE_Y);
+                    }
+                    if(command.equalsIgnoreCase("jump")){
+                        PETS.get(0).startAction(new Jump(PETS.get(0), 500));
                     }
                 }
                 catch (ArrayIndexOutOfBoundsException | NoSuchElementException ignore){}
@@ -40,7 +63,7 @@ public class Main {
     };
 
     public static void main (String[] args) throws Exception {
-        ArrayList<Pet> pets = Pet.loadPets(args[0], logger);
+        PETS = Pet.loadPets(args[0], _logger);
 
         try {
             if (args[1].toLowerCase(Locale.ROOT).equals("debug")) {
@@ -49,16 +72,18 @@ public class Main {
         }
         catch (Exception ignore) {}
 
-        logger.info("Screen size: " + SCREEN_SIZE_X + ", " + SCREEN_SIZE_Y);
-        logger.info("Resources have loaded.");
+        _logger.info("Screen size: " + SCREEN_SIZE_X + ", " + SCREEN_SIZE_Y);
+        _logger.info("Resources have loaded.");
 
-        for(Pet pet : pets){
+        for(Pet pet : PETS){
             pet.generate();
-            logger.info("Generate " + pet.name);
+            _logger.info("Generate " + pet.name);
             Thread.sleep(1000);
         }
 
-        commandThread.start();
+        INIT_DONE = true;
+
+        _commandThread.start();
     }
 
 
