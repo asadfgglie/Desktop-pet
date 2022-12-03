@@ -2,7 +2,6 @@ package ckcsc.asadfgglie.veiw;
 
 import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.Pet;
-import ckcsc.asadfgglie.pet.action.SpeedVector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,10 +10,10 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 
 public class PetPanel extends JPanel {
-    private final Pet pet;
+    private final Pet _pet;
 
     public PetPanel (Pet pet){
-        this.pet = pet;
+        this._pet = pet;
 
         setBackground(new Color(0, 0,0,0));
     }
@@ -22,7 +21,7 @@ public class PetPanel extends JPanel {
     @Override
     protected void paintComponent (Graphics g) {
         super.paintComponent(g);
-        Image image = pet.getWindow().getTickImage();
+        Image image = _pet.getWindow().getTickImage();
         int imageWidth = image.getWidth(this);
         int imageHeight = image.getHeight(this);
 
@@ -36,12 +35,12 @@ public class PetPanel extends JPanel {
 
         transform.scale(sc, sc);
 
-        if(pet.honSpeedVector == SpeedVector.Right){
+        if(_pet.getSpeed().getSpeedX() > 0){
             // flip image horizontally
             AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
             tx.translate(-imageWidth, 0);
             AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            image = op.filter(toBufferedImage(image, imageWidth, imageHeight), null);
+            image = op.filter(_toBufferedImage(image, imageWidth, imageHeight), null);
         }
 
         setSize((int) (imageWidth * sc), (int) (imageHeight * sc));
@@ -60,7 +59,7 @@ public class PetPanel extends JPanel {
         g2.dispose();
     }
 
-    private BufferedImage toBufferedImage (Image img, int width, int height) {
+    private BufferedImage _toBufferedImage (Image img, int width, int height) {
         if (img instanceof BufferedImage)
         {
             return (BufferedImage) img;

@@ -3,7 +3,7 @@ package ckcsc.asadfgglie.veiw;
 import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.Pet;
 import ckcsc.asadfgglie.pet.action.PetAction;
-import ckcsc.asadfgglie.pet.action.ActionContainer;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,15 +13,15 @@ import java.awt.*;
 import static ckcsc.asadfgglie.main.Main.FPS;
 
 public class PetWindow extends JWindow implements Runnable{
-    private final Pet pet;
-    private final Logger logger;
+    private final Pet _pet;
+    private final Logger _logger;
 
-    private PetAction action;
-    private int actionTick = 0;
+    private PetAction _action;
+    private int _actionTick = 0;
 
-    public PetWindow (Pet pet) {
-        this.pet = pet;
-        logger = LoggerFactory.getLogger(pet.name + "-" + PetWindow.class.getSimpleName());
+    public PetWindow (@NotNull Pet pet) {
+        this._pet = pet;
+        _logger = LoggerFactory.getLogger(pet.name + "-" + PetWindow.class.getSimpleName());
 
         setBackground(new Color(0, 0,0,0));
         getContentPane().add(pet.getPanel());
@@ -31,23 +31,24 @@ public class PetWindow extends JWindow implements Runnable{
         setSize(Main.MAX_SIZE, Main.MAX_SIZE);
     }
 
-    public Image getTickImage(ActionContainer.ActionList behavior){
-        return pet.getBehaviorContainer().getImage(behavior, actionTick);
-    }
-
+    /**
+     * Return image by action and tick.
+     * @return
+     * Action image.
+     * If the action doesn't have images, return default action <b>Stand</b>.
+     */
     public Image getTickImage(){
-        return getTickImage(action.getBehavior());
+        return _pet.getActionImageContainer().getImage(_action.getAction(), _actionTick);
     }
 
     public void setAction(PetAction action){
-        this.action = action;
-        logger.debug("Change action to: " + action.getBehavior().name());
-        actionTick = 0;
+        this._action = action;
+        _actionTick = 0;
     }
 
     @Override
     public synchronized void run () {
-        logger.debug(pet.name + "-window thread start");
+        _logger.debug(_pet.name + "-window thread start");
         setVisible(true);
         int realTick = 0;
 
@@ -57,16 +58,16 @@ public class PetWindow extends JWindow implements Runnable{
               and it has spent me over five hours to fix this "little bug"
              */
             repaint();
-
-            pet.doMoveAction();
+            _pet.setFalling(Main.SCREEN_SIZE_Y - Main.MAX_SIZE > getY());
+            _pet.doMoveAction();
 
             realTick++;
             if(realTick % Integer.MAX_VALUE == 0){
                 realTick = 0;
             }
 
-            if(realTick % action.getActionTick() == 0) {
-                actionTick++;
+            if(realTick % _action.getActionTick() == 0) {
+                _actionTick++;
             }
 
             try {
