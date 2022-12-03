@@ -1,11 +1,13 @@
 package ckcsc.asadfgglie.pet;
 
-import ckcsc.asadfgglie.Exception.WrongDirectionException;
 import ckcsc.asadfgglie.main.Main;
 import ckcsc.asadfgglie.pet.action.*;
-import ckcsc.asadfgglie.pet.action.SpeedVector;
+import ckcsc.asadfgglie.util.ActionImageContainer;
+import ckcsc.asadfgglie.util.SpeedVector;
 import ckcsc.asadfgglie.veiw.PetPanel;
 import ckcsc.asadfgglie.veiw.PetWindow;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,79 +17,90 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Random;
 
-public class Pet extends Thread{
-    private final Logger logger;
+public class Pet{
+    private final Pet _this;
+    private final Logger _logger;
 
-    public SpeedVector honSpeedVector = SpeedVector.Left;
+    private int _offsetX;
+    private int _offsetY;
+    private boolean _isPressed;
+    private boolean _isFalling;
 
-    private int offsetX;
-    private int offsetY;
-    private boolean isPressed;
-
-    private double speedX = 0;
-    private double speedY = 0;
+    private SpeedVector _speed = new SpeedVector(0, 0);
 
     public final String name;
 
-    private final ActionContainer actionContainer;
+    private final ActionImageContainer _actionImageContainer;
 
-    private final PetPanel panel;
-    private final PetWindow window;
-    private final Thread petWindowThread;
+    private final PetPanel _panel;
+    private final PetWindow _window;
+    private final Thread _petWindowThread;
+    private final ActionHandle _petActionHandle;
 
-    public Pet (String name, ActionContainer actionContainer){
+    private Pet (String name, ActionImageContainer actionImageContainer){
+        _this = this;
         this.name = name;
-        this.actionContainer = actionContainer;
-        logger = LoggerFactory.getLogger(this.getClass() + "-" + name);
+        this._actionImageContainer = actionImageContainer;
+        _logger = LoggerFactory.getLogger(this.getClass() + "-" + name);
+        _isFalling = false;
 
-        panel = new PetPanel(this);
-        window = new PetWindow(this);
+        _panel = new PetPanel(this);
+        _window = new PetWindow(this);
+        _window.setAction(new Stand(this, 0));
 
-        petWindowThread = new Thread(window, name + "-window");
+        _petWindowThread = new Thread(_window, name + "-window");
+        _petActionHandle = new ActionHandle(this);
 
-        window.addMouseListener(new MouseAdapter() {
+        _window.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed (MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    isPressed = true;
-                    offsetX = e.getX();
-                    offsetY = e.getY();
-                    logger.debug(isPressed + ", (" + offsetX + ", " + offsetY + ")");
+                    _isPressed = true;
+                    _offsetX = e.getX();
+                    _offsetY = e.getY();
+                    _logger.debug("Dragged from (" + e.getXOnScreen() + ", " +e.getYOnScreen() + ")");
                 }
             }
 
-            @SuppressWarnings("ConstantConditions")
             @Override
             public void mouseReleased (MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    isPressed = false;
-                    logger.debug(String.valueOf(isPressed));
+                    _isPressed = false;
+                    _logger.debug("Dragged to (" + e.getXOnScreen() + ", " +e.getYOnScreen() + ")");
+                    startAction(new Stand(_this,0));
                 }
             }
         });
 
-        window.addMouseMotionListener(new MouseAdapter() {
+        _window.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseDragged (MouseEvent e) {
-                if(isPressed){
-                    window.setLocation(e.getXOnScreen() - offsetX, e.getYOnScreen() - offsetY);
-                    logger.debug("Dragged to (" + e.getXOnScreen() + ", " +e.getYOnScreen() + ")");
+                if(_isPressed){
+                    _window.setLocation(e.getXOnScreen() - _offsetX, e.getYOnScreen() - _offsetY);
                 }
             }
         });
     }
 
     public PetPanel getPanel (){
-        return panel;
+        return _panel;
     }
 
     public PetWindow getWindow (){
-        return window;
+        return _window;
     }
 
-    public static ArrayList<Pet> loadPets (String path, Logger logger) throws FileNotFoundException{
+    /**
+     * Load a bunch of pets from path.
+     * Each pet should be separated by folder.
+     * @param path
+     * pets' folder
+     * @return an array loaded pets
+     * @throws FileNotFoundException
+     * If there is no pet in path.
+     */
+    public static @NotNull ArrayList<Pet> loadPets (String path, Logger logger) throws FileNotFoundException{
         File folder = new File(path);
 
         if(folder.isDirectory()){
@@ -114,131 +127,138 @@ public class Pet extends Thread{
         }
     }
 
-    public static Pet loadPet (File path, Logger logger) throws FileNotFoundException{
-        File[] behaviorFolders = path.listFiles(File::isDirectory);
+    /**
+     * Load a pet from pet's folder.
+     * @param path
+     * The folder which include pet's action's image.
+     * All image will be loaded into actionImageContainer.
+     * @return A pet with name, actionImage
+     * @throws FileNotFoundException
+     * If no action folder in pet's folder.
+     * If no action image in pet's action folder.
+     */
+    @Contract("_, _ -> new")
+    public static @NotNull Pet loadPet (@NotNull File path, Logger logger) throws FileNotFoundException{
+        File[] actionImageFolders = path.listFiles(File::isDirectory);
 
-        if(behaviorFolders == null){
-            throw new FileNotFoundException("There must be Directory of where there is behavior image in your pet's folder!");
+        if(actionImageFolders == null){
+            throw new FileNotFoundException("There must be Directory of where there is action image in your pet's folder!");
         }
 
-        ActionContainer behaviors = new ActionContainer();
+        ActionImageContainer actions = new ActionImageContainer();
 
-        for (File behaviorFolder : behaviorFolders) {
-            logger.info("load .../" + path.getName() + "/" + behaviorFolder.getName());
+        for (File actionFolder : actionImageFolders) {
+            logger.info("load .../" + path.getName() + "/" + actionFolder.getName());
 
-            File[] behaviorImages = behaviorFolder.listFiles((fileName -> fileName.getName().endsWith("png")));
+            File[] actionImages = actionFolder.listFiles((fileName -> fileName.getName().endsWith("png")));
 
-            if (behaviorImages == null) {
-                throw new FileNotFoundException("There must be PNG images in your pet's behavior Directory!");
+            if (actionImages == null) {
+                throw new FileNotFoundException("There must be PNG images in your pet's action Directory!");
             }
 
-            Image[] imgs = new Image[behaviorImages.length];
-            for (int j = 0; j < behaviorImages.length; j++) {
-                logger.info("load .../" + path.getName() + "/" + behaviorFolder.getName() + "/" + behaviorImages[j].getName());
+            Image[] imgs = new Image[actionImages.length];
+            for (int j = 0; j < actionImages.length; j++) {
+                logger.info("load .../" + path.getName() + "/" + actionFolder.getName() + "/" + actionImages[j].getName());
 
-                imgs[j] = Toolkit.getDefaultToolkit().getImage(behaviorImages[j].getPath());
+                imgs[j] = Toolkit.getDefaultToolkit().getImage(actionImages[j].getPath());
             }
 
-            behaviors.addAction(behaviorFolder.getName().toUpperCase(), imgs);
+            actions.addAction(actionFolder.getName().toUpperCase(), imgs);
         }
-        return new Pet(path.getName(), behaviors);
-    }
-
-    /** Set behavior and pet's each speedVector speed vector */
-    private void setNowBehavior (PetAction action) throws WrongDirectionException {
-        window.setAction(action);
-        speedX = action.getSpeedX();
-        speedY = action.getSpeedY();
+        return new Pet(path.getName(), actions);
     }
 
 
-    /** <p>Set behavior, and make action switch thread wait for action down.</p>
-     * <p>actionTime: millisecond, how much time action switch thread should wait for.</p>
-     * */
-    public synchronized void startAction(PetAction action, int actionTime) throws WrongDirectionException {
+    /**
+     * Make the pet do action.
+     * @param action
+     * Except <b>Stand</b> action's actionTime can be 0, other action's actionTime can not be 0.
+     * Or it will stick the action thread.
+     */
+    public synchronized void startAction(PetAction action){
         this.notify();
 
-        setNowBehavior(action);
+        if(_isFalling && action instanceof Jump){
+            do{
+                try {
+                    wait(50);
+                }
+                catch (InterruptedException ignore) {}
+            }while (_isFalling);
+        }
+
+        if(_isFalling) {
+            _speed.setSpeedX(_speed.getSpeedX() - action.getSpeedVector().getSpeedX());
+            action.getSpeedVector().setSpeedX(0);
+        }
+
+        _petActionHandle.setNowAction(action);
+        _window.setAction(action);
+        if(action.getActionTime() == 0 && action instanceof Stand){
+            return;
+        }
+
+        _logger.debug("action: " + action.getAction().name());
 
         try {
-            wait(actionTime);
-            setNowBehavior(new Stand(this));
+            wait(action.getActionTime());
+            if(_petActionHandle.getNowAction() == action) {
+                startAction(new Stand(this,0));
+            }
         }
         catch (InterruptedException ignore) {}
     }
 
-    @Override
-    public void run () {
-        while (true) {
-            try {
-                startAction(new Stand(this), 2000);
-            }
-            catch (WrongDirectionException e) {
-                logger.error(e.getMessage());
-                e.printStackTrace();
-            }
+    public void setFalling (boolean falling) {
+        _isFalling = falling;
+    }
 
-            try {
-                startAction(new Walk(this, (new Random().nextBoolean())? SpeedVector.Left.setSpeedX(-10) : SpeedVector.Right.setSpeedX(10)), 2000);
-            }
-            catch (WrongDirectionException e) {
-                logger.error(e.getMessage());
-                e.printStackTrace();
-            }
-        }
+    public ActionHandle getPetActionHandle () {
+        return _petActionHandle;
     }
 
     public void doMoveAction () {
-        if (isPressed) return;
+        if (_isPressed) return;
 
-        logger.debug("speedX: " + speedX);
-        logger.debug("x, y: " + window.getX() + ", " + window.getY());
-        // X direction
-        if((window.getX() >= 0 && window.getX() <= Main.SCREEN_SIZE_X - panel.getWidth()) && ((int) (window.getX() + speedX) <= Main.SCREEN_SIZE_X - panel.getWidth() && (int) (window.getX() + speedX) >= 0)){
-            window.setLocation((int) (window.getX() + speedX), window.getY());
+        if (Main.SCREEN_SIZE_Y - Main.MAX_SIZE > _window.getY()) {
+            _speed = SpeedVector.add(_speed, Main.GRAVITY);
         }
-        else if(window.getX() < 0){
-            window.setLocation(0, window.getY());
-        }
-        else if(window.getX() > Main.SCREEN_SIZE_X - panel.getWidth()){
-            window.setLocation(Main.SCREEN_SIZE_X - panel.getWidth(), window.getY());
+        else if(Main.SCREEN_SIZE_Y - Main.MAX_SIZE < _window.getY()){
+            _window.setLocation(_window.getX(), Main.SCREEN_SIZE_Y - Main.MAX_SIZE);
+            _speed.setSpeedY(0);
         }
 
-        // Y direction
-        if(window.getY() < Main.SCREEN_SIZE_Y - Main.MAX_SIZE){
 
-            speedY += Main.GRAVITY;
-            window.setLocation(window.getX(), (int) (window.getY() + speedY));
+        if ((int) (_window.getX() + _speed.getSpeedX()) <= Main.SCREEN_SIZE_X - _panel.getWidth() &&
+                (int) (_window.getX() + _speed.getSpeedX()) >= 0) {
+            _window.setLocation((int) (_window.getX() + _speed.getSpeedX()), (int) (_window.getY() + _speed.getSpeedY()));
         }
-        else{
-            window.setLocation(window.getX(), Main.SCREEN_SIZE_Y - Main.MAX_SIZE);
-            speedY = 0;
+
+        if(_window.getX() < 0){
+            _window.setLocation(0, (int) (_window.getY() + _speed.getSpeedY()));
+        }
+        if(_window.getX() > Main.SCREEN_SIZE_X - _panel.getWidth()){
+            _window.setLocation(Main.SCREEN_SIZE_X - _panel.getWidth(), (int) (_window.getY() + _speed.getSpeedY()));
         }
     }
 
-    public double getSpeedX () {
-        return speedX;
+    public SpeedVector getSpeed () {
+        return _speed;
     }
 
-    public double getSpeedY () {
-        return speedY;
+    public void setSpeed (SpeedVector speed) {
+        this._speed = speed;
     }
 
-    public void setSpeedX (double speedX) {
-        this.speedX = speedX;
+    public ActionImageContainer getActionImageContainer () {
+        return _actionImageContainer;
     }
 
-    public void setSpeedY (double speedY) {
-        this.speedY = speedY;
-    }
-
-    public ActionContainer getBehaviorContainer () {
-        return actionContainer;
-    }
-
-    /** Start all pet's thread. */
+    /**
+     * Start all pet's thread and generate the pet.
+     */
     public void generate () {
-        start();
-        petWindowThread.start();
+        _petActionHandle.start();
+        _petWindowThread.start();
     }
 }
